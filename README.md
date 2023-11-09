@@ -369,7 +369,7 @@ This should show some of the same sort of device name data that you could see by
 
 ### Importing GATT data from GATTprint.log
 
-Both `central_all_launcher2.py` and `gatttool` log information attempt attempted and successful GATTprinting to the file `/home/pi/GATTprint.log` (or alt user home directory if you reconfigured it). To import this data into the database, run the following:
+Both `central_all_launcher2.py` and `gatttool` log information about attempted and successful GATTprinting to the file `/home/pi/GATTprint.log` (or alt user home directory if you reconfigured it). To import this data into the database, run the following:
 
 ```
 cp ~/Blue2thprinting/Analysis/parse_GATTPRINT_2db.py ~/

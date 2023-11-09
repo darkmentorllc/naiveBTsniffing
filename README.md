@@ -240,6 +240,7 @@ If you want to manually restart the collection without a reboot, you can run: `s
 
 After you have sniffed some traffic, you will have files in /home/pi/Scripts/logs/btmon/ and /home/pi/Scripts/logs/gpspipe/, that should be named the same as each other (timestamp followed by hostname) except that GPS files end in .txt and btmon in .bin.
 
+**Note:** Because data parsing and database lookups can be CPU/IO intensive, it is generally recommended to *not* perform data import or analysis on the capture device (the Pi Zero in this case.) Rather, it is recommended to copy all data off to a separate, faster, analysis system, and perform the subsequent steps there.
 
 ### delete\_gps\_files\_lacking\_lat\_long.py
 
@@ -309,6 +310,8 @@ The file bt_map.html can be opened in a browser to see the GPS locations of name
 
 ## Import data into MySQL
 
+**Note:** Because data parsing and database lookups can be CPU/IO intensive, it is generally recommended to *not* perform data import or analysis on the capture device (the Pi Zero in this case.) Rather, it is recommended to copy all data off to a separate, faster, analysis system, and perform the subsequent steps there.
+
 ### One time setup
 
 **Linux Software Setup**: You should already have the necessary MySQL (MariaDB) database and tshark tools installed from the above apt-get commands.
@@ -356,7 +359,34 @@ Eventually once you have many files to process in bulk, you will want to pass ea
 
 `time find /path/to/btmon_logs/2023-10* -type f -name "*.bin" | xargs -n 1 -I {} bash -c " ./fill_ALL_from_HCI_log.sh {}"`
 
-### Investigating data with TellMeEverything.py
+**To confirm that some data was successfully imported, you can issue:**
+
+```
+mysql -u user -pa -D bt -e "SELECT * FROM LE_bdaddr_to_name LIMIT 10;"
+```
+
+This should show some of the same sort of device name data that you could see by the above `./dump_names_specific.sh` command.
+
+### Importing GATT data from GATTprint.log
+
+Both `central_all_launcher2.py` and `gatttool` log information attempt attempted and successful GATTprinting to the file `/home/pi/GATTprint.log` (or alt user home directory if you reconfigured it). To import this data into the database, run the following:
+
+```
+cp ~/Blue2thprinting/Analysis/parse_GATTPRINT_2db.py ~/
+cd ~
+cat GATTprint*.log | sort | uniq > GATTprint_dedup.log
+python3 ./parse_GATTPRINT_2db.py
+```
+
+The above `cat` step is useful both to speed up the parsing of a single host's data (if it queried the same host multiple times), but also to combine data from multiple hosts, and avoid unnecessary duplicative mysql imports.
+
+**To confirm that some data was successfully imported, you can issue:**
+
+```
+mysql -u user -pa -D bt -e "SELECT * FROM GATT_characteristics LIMIT 10;"
+```
+
+## Inspecting data with TellMeEverything.py
 
 `cd ~/naiveBTsniffing/Analysis`
 

@@ -1,5 +1,7 @@
 Welcome to Xeno's naive Bluetooth sniffing setup! It's cheap and easy and *good enough* to get started!
 
+**Note: You probably *don't* want to use this repository, but instead want to use the more advanced successor (which is built on the same principles): [Blue2thprinting](https://github.com/darkmentorllc/Blue2thprinting).**
+
 Note: the below hardware purchase links are Amazon affiliate links that support the [OpenSecurityTraining2](https://ost2.fyi) nonprofit.
 
 # Assumed Hardware
@@ -210,6 +212,12 @@ make -j4
 At the end you should confirm it has built the `gatttool` executable file in `~/Downloads/bluez-5.66/attrib/gatttool` and the `sdptool` in `~/Downloads/bluez-5.66/tools/sdptool`.
 
 This will also build a custom `~/Downloads/bluez-5.66/client/bluetoothctl` which has an output format that's parsed by `central_app_launcher2.py`.
+
+# Script interactions & data flow
+
+Which scripts launch which other scripts, and what logs what data to where is captured in the below diagram (click for full size image.)
+
+![](./img/naiveBTsniffing.png)
 
 
 # Capture Scripts Setup

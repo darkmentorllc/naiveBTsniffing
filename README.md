@@ -62,6 +62,20 @@ Nice to have:
 
 ![MySetup](./img/MySetup_Small.png)
 
+# New! Easy-mode quick-start setup!
+
+The below instructions are the full setup guide. However, it's the kind of thing where any small mistake in setup will cost you hours of debugging. So to make it easier for people to get started, I have done the initial setup on a system (minus the GPS setup and minus the small screen setup), and then just used `dd` to image the resulting 64GB microSD card with a known-good working instance of the software running on it. If you want to just get started quickly, then you can do the following.
+
+1. Download and unzip [this file](https://drive.google.com/file/d/11hYLedLHBNParr7NMD4EV3naEXdctVqb/view?usp=sharing). Note: it will unzip to being a full 64GB file, so make sure you have enough free space.
+2. From a Linux system, with a 64GB microSD card plugged in, run:
+
+```
+dd if=/path/to/rPi0_Buster_KnownGood2_64GB.dd of=/dev/sdMICROSD bs=1MB
+```
+Where `/path/to/rPi0_Buster_KnownGood2_64GB.dd` is the file you just decompressed, and `/dev/sdMICROSD` should be the base drive letter of the microSD card. You can use `df -h` to see the drives on your system while the card is plugged in (e.g. via a USB to microSD adapter), and if for instance you recognized "/dev/sdd1" as associated with the microSD, then youud use `/dev/sdd` for the above dd command (i.e. remove any partition numbers.)
+
+If you instead want to set everything up fron scratch, continue on below.
+
 # Recommended Software
 
 Use the official [Raspbian](https://www.raspberrypi.com/software/) OS, and imaging utilities.
@@ -339,7 +353,7 @@ The oui.txt is from [https://standards-oui.ieee.org/oui/oui.txt](https://standar
 **Import BT companies into the database**:
 
 ```
-cd ~/naiveBTsniffing/Analysis`
+cd ~/naiveBTsniffing/Analysis
 ./translator_fill_UUID16_to_company.sh
 ```
 

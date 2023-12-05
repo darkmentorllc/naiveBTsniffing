@@ -8,7 +8,7 @@ HN=$(hostname)
 echo $HN
 echo "Logging to ${LOGPATH}/${DATE}_${HN}.bin"
 
-sleep 31
+sleep 40
 hciconfig hci0 down
 sleep 1
 hciconfig hci0 up

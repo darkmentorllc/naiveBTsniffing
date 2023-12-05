@@ -9,7 +9,7 @@ LINKAGE_FILE="/tmp/BT_link.txt"
 echo "Logging to ${LOGPATH}/${DATE}_${HN}.txt"
 
 #So this will come up after btmon
-sleep 40
+sleep 50
 
 #Do the actual scanning, so hcidump and btmon can see traffic
 #/usr/bin/bluetoothctl scan on > $LOGPATH/$DATE.txt

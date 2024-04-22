@@ -127,7 +127,7 @@ If prompted for which user the changes should apply to, select or type pi. Selec
 ```
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y python3-pip tshark mariadb-server gpsd gpsd-clients expect git net-tools
+sudo apt-get install -y python3-pip python3-mysql.connector python3-docutils tshark mariadb-server gpsd gpsd-clients expect git net-tools openssh-server libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf python2.7
 ```
 Wireshark/tshark/dumpcap will prompt for whether non-super-users should be able to capture packets. Select yes.  
 
@@ -183,35 +183,32 @@ Confirm you are running version 3.17 (newer versions like 3.22 which is bundled 
 
 ### Compile custom BlueZ tools (Optional)
 
-I collect GATT data via a modified `gatttool` from the BlueZ tools. I also use the unmodified, but not compiled by default, `sdptool` to collect SDP info. If you want to use this, you will have to compile it on the target system (e.g. Raspberry Pi).
+I collect GATT data via a modified `gatttool` from the BlueZ tools. I also use the unmodified, but not compiled by default, `sdptool` to collect SDP info. If you want to use this, you will have to compile it on the target system (e.g. Raspberry Pi). My modified BlueZ-5.66 code is in this repository in the `bluez-5.66` folder.
 
-My modified BlueZ-5.66 code is in this repository in the `~/naiveBTsniffing/bluez-5.66` folder. Issue `cp -r ~/naiveBTsniffing/bluez-5.66 ~/Downloads/bluez-5.66`, because scripts like "central\_app\_launcher2.py" assume it is in that location.
-
-```
-sudo apt-get install -y libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf python3-docutils
+Issue the following commands to copy the folder to Downloads (where other scripts will assume it's located), and then begin the Makefile generation:  
 
 ```
-
-If you are using a Raspberry Pi Zero W, running the recommended Linux distribution above, then you don't need to re-compile the code, as it is already compiled for that platform. If using a different system, proceed.
-
-Then issue:
-
-```
+cp -r ~/Blue2thprinting/bluez-5.66 ~/Downloads/bluez-5.66
 cd ~/Downloads/bluez-5.66
-./configure --prefix=/usr --mandir=/usr/share/man --sysconfdir=/etc --localstatedir=/var --enable-experimental
+./configure --prefix=/usr --mandir=/usr/share/man --sysconfdir=/etc --localstatedir=/var --enable-experimental --enable-deprecated
 ```
-Now you need to edit the Makefile and uncomment every line (and enclosing statement) that has a reference to "gatttool" or "sdptool" on it. (I don't know at the moment how to call ./configure in a way that will include it. If you know, LMK.)  
 
-
-Then, if you have a username other than 'pi', update `~/Downloads/bluez-5.66/attrib/gatttool.c` to correct the path in `static char * g_log_name = "/home/pi/GATTprint.log";`
+If you have a username other than 'pi', update `~/Downloads/bluez-5.66/attrib/gatttool.c` and `~/Downloads/bluez-5.66/tools/sdptool.c` to correct the path in `g_log_name`.
 
 ```
 make -j4
 ```
 
-At the end you should confirm it has built the `gatttool` executable file in `~/Downloads/bluez-5.66/attrib/gatttool` and the `sdptool` in `~/Downloads/bluez-5.66/tools/sdptool`.
+At the end you should confirm it has built by running the following commands:
 
-This will also build a custom `~/Downloads/bluez-5.66/client/bluetoothctl` which has an output format that's parsed by `central_app_launcher2.py`.
+```
+~/Downloads/bluez-5.66/attrib/gatttool --help
+~/Downloads/bluez-5.66/tools/sdptool --help
+```
+
+If there is an error of "Failed to open the file.", that means you failed to update the username in the `g_log_name` variable as mentioned above (or perhaps it already exists but you don't have permission because it was created by root.)
+
+Custom BlueZ compilation will also build a custom `~/Downloads/bluez-5.66/client/bluetoothctl` which has an output format that's parsed by `central_app_launcher2.py`.
 
 # Script interactions & data flow
 

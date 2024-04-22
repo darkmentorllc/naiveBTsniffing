@@ -68,196 +68,57 @@ Nice to have:
 
 The below instructions are the full setup guide. However, it's the kind of thing where any small mistake in setup will cost you hours of debugging. So to make it easier for people to get started, I have done the initial setup on a system (minus the GPS setup and minus the small screen setup), and then just used `dd` to image the resulting 64GB microSD card with a known-good working instance of the software running on it. If you want to just get started quickly, then you can do the following.
 
-1. Download and unzip [this file](https://drive.google.com/file/d/11hYLedLHBNParr7NMD4EV3naEXdctVqb/view?usp=sharing). Note: it will unzip to being a full 64GB file, so make sure you have enough free space.
-2. From a Linux system, with a 64GB microSD card plugged in, run:
+1. Download [this file](https://drive.google.com/file/d/1bmfZFPHIO7cvjxV1yBJVJAgNt_wJx566/view?usp=sharing).
+2. Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to write the `rPi0_Buster_KnownGood_2024-04-22.img.gz` file to your microSD card.
+3. After you boot your Raspberry Pi Zero do the following from the command line:
+4. cd ~/Scripts
+5. sudo killall.sh
+6. sudo raspi-config
+	1. Select "1 System Options"
+	2. Select "S4 Hostname"
+	3. Set the hostname to "pi0-N" where N is that this is your Nth Raspberry pi. E.g. I have pi0-1, pi0-2, pi0-3 for my 3 Pis. This hostname will be used on log files, so if you've got multiple sniffers in multiple locations you'll want to know which logs came from which one. Then select "OK".
+	4. Select "6 Advanced Options"
+	2. Select "A1 Expand Filesystem"
+	3. After it says "Root partition has been resized..." select "OK"
+	4. Select "Finish"
+	5. After it asks if you'd like to reboot, select yes.
 
-```
-dd if=/path/to/rPi0_Buster_KnownGood2_64GB.dd of=/dev/sdMICROSD bs=1MB
-```
-Where `/path/to/rPi0_Buster_KnownGood2_64GB.dd` is the file you just decompressed, and `/dev/sdMICROSD` should be the base drive letter of the microSD card. You can use `df -h` to see the drives on your system while the card is plugged in (e.g. via a USB to microSD adapter), and if for instance you recognized "/dev/sdd1" as associated with the microSD, then youud use `/dev/sdd` for the above dd command (i.e. remove any partition numbers.)
+**Note**: SSH is on by default and the password for the `pi` user is `a` by default. Change it if you feel like it.
 
-If you instead want to set everything up fron scratch, continue on below.
+If you instead want to set everything up from scratch, the instructions are [here](FULLSETUP.md).
 
-# Recommended Software
+# Confirm imaging succeeded
 
-Use the official [Raspbian](https://www.raspberrypi.com/software/) OS, and imaging utilities.
+If imaging succeeded, the Raspberry Pi will just be automatically collecting BT data every time it boots up. You should be able to do `tail -f ~/CAL.log` and see the output from `~/central_all_launcher2.py`, which is orchestrating the tools like gatttool and sdptool.
 
-Tested most recently with [2023-05-03-raspios-buster-armhf.img.xz](https://downloads.raspberrypi.org/raspios_oldstable_armhf/images/raspios_oldstable_armhf-2023-05-03/2023-05-03-raspios-buster-armhf.img.xz). "Buster" is recommended instead of the newer "Bullseye" due to bugs in the GPS software bundled with Bullseye.
+You can also do:
 
-# OS Setup & Configuration
-
-You will be required to walk through initial setup of the system on first boot.  
-***The scripts in this repository assume that you will are using the default username of "pi".*** If you choose anything else you will have to update paths in the scripts.
-
-### Set time to UTC:
-
-`sudo timedatectl set-timezone UTC`
-
-It simplifies mapping GPS times to host times if both are in UTC.
-
-### Enable SSH:
-
-I use SSH for getting logs off the device to a faster computer for processing.
-
-```
-	sudo su  
-	cd /boot  
-	touch ssh  
-```
-`sudo reboot` (or wait until after you change hostname below)
-
-### Disable Wifi:
-
-This is so that it doesn't waste power, and so that it doesn't compete with the Bluetooth for the use of the 2.4GHz antenna or spectrum.
-
-`sudo nano /boot/config.txt`  
-Under the line "Additional overlays and parameters are documented..." add:  
-`dtoverlay=disable-wifi`  
-`sudo reboot` (or wait until after you change hostname below)  
-
-### Change hostname
-
-If you're using multiple devices, you'll want to know which device saw which traffic. The scripts append the hostname to log files, so you'll need to use unique hostnames to distinguish where the log files came from.
-
-`sudo raspi-config`
-If prompted for which user the changes should apply to, select or type pi. Select "System Options" -> Hostname, and then set a new hostname like pi0-N, where this is your Nth system. Select Ok, and then navigate to Finish, and the reboot when prompted.
-
-### Install prerequisite software:
-
-```
-sudo apt-get update
-sudo apt-get upgrade -y
-sudo apt-get install -y python3-pip python3-mysql.connector python3-docutils tshark mariadb-server gpsd gpsd-clients expect git net-tools openssh-server libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf python2.7
-```
-Wireshark/tshark/dumpcap will prompt for whether non-super-users should be able to capture packets. Select yes.  
-
-```
-sudo pip3 install gmplot inotify_simple
-```
-
-**Check out *this repository* to a known location:**  
-
-```
-git clone --recurse-submodules https://github.com/darkmentorllc/naiveBTsniffing.git ~/naiveBTsniffing
-```
-
-Ensure that the Bluetooth assigned numbers sub-repository was successfully checked out by confirming that `~/naiveBTsniffing/Analysis/public` is not empty.
-
-
-### Test GPS module:
-
-If you type "gpsmon" at this point, you will not get any coordinates. The presence of coordinates will be our determination of correctness of operation.
-
-*With your GPS module disconnected*, run: `ls -la /dev/ttyACM*`  
- - There should be no such file present. If there is something present, unplug all peripheral devices until you detect which device was causing that. Do not plug that device in again while operating this system.  
- - Plug in your USB GPS antenna, run `ls -la /dev/ttyACM*`  
- - The GPS device should now be visible as /dev/ttyACM0. ***The below will assume that /dev/ttyACM0 is the GPS device.***  
-
-Change two lines from:
-
-```
-ListenStream=[::1]:2947
-ListenStream=127.0.0.1:2947
-```
-
-to
-
-```
-#ListenStream=[::1]:2947
-ListenStream=0.0.0.0:2947
-```
-Save the file and exit. (Note: this commented out the IPv6 address.)
-
-```
-gpsd /dev/ttyACM0 -F /var/run/gpsd.socket
-systemctl daemon-reload
-systemctl restart gpsd.socket
-systemctl restart gpsd
-```
-You should now see GPS coordinates (assuming you're somewhere with visibility of the sky or otherwise in GPS range.) If you don't, reboot, and then run "sudo gpsmon" and confirm if you can then. (If you still can't, you're SOL, because Linux GPS has caused me enough trouble, and I'm not debugging yours `¯\_(ツ)_/¯`.)
-
-Ctrl-c to exit gpsmon.
-
-`gpspipe -V`
-Confirm you are running version 3.17 (newer versions like 3.22 which is bundled with newer Raspbian OSes have known issues that prevent capturing the coordinates in our usage, with the GPS hardware recommended above.)
-
-### Compile custom BlueZ tools (Optional)
-
-I collect GATT data via a modified `gatttool` from the BlueZ tools. I also use the unmodified, but not compiled by default, `sdptool` to collect SDP info. If you want to use this, you will have to compile it on the target system (e.g. Raspberry Pi). My modified BlueZ-5.66 code is in this repository in the `bluez-5.66` folder.
-
-Issue the following commands to copy the folder to Downloads (where other scripts will assume it's located), and then begin the Makefile generation:  
-
-```
-cp -r ~/Blue2thprinting/bluez-5.66 ~/Downloads/bluez-5.66
-cd ~/Downloads/bluez-5.66
-./configure --prefix=/usr --mandir=/usr/share/man --sysconfdir=/etc --localstatedir=/var --enable-experimental --enable-deprecated
-```
-
-If you have a username other than 'pi', update `~/Downloads/bluez-5.66/attrib/gatttool.c` and `~/Downloads/bluez-5.66/tools/sdptool.c` to correct the path in `g_log_name`.
-
-```
-make -j4
-```
-
-At the end you should confirm it has built by running the following commands:
-
-```
-~/Downloads/bluez-5.66/attrib/gatttool --help
-~/Downloads/bluez-5.66/tools/sdptool --help
-```
-
-If there is an error of "Failed to open the file.", that means you failed to update the username in the `g_log_name` variable as mentioned above (or perhaps it already exists but you don't have permission because it was created by root.)
-
-Custom BlueZ compilation will also build a custom `~/Downloads/bluez-5.66/client/bluetoothctl` which has an output format that's parsed by `central_app_launcher2.py`.
-
-# Script interactions & data flow
-
-Which scripts launch which other scripts, and what logs what data to where is captured in the below diagram (click for full size image.)
-
-![](./img/naiveBTsniffing.png)
-
-
-# Capture Scripts Setup
-
-### Setup automatic script execution at boot:
-
-```
-cp -r ~/naiveBTsniffing/Scripts ~/Scripts
-cp ~/Scripts/central_app_launcher2.py ~/central_app_launcher2.py
-cd ~
-sudo su
-cd Scripts
-chmod +x *.sh
-crontab -e
-```
-Select nano, the best editor! :P  
-Add to the bottom of the file:  
-`@reboot /home/pi/Scripts/runall.sh`  
-Save and exit  
-`sudo reboot`  
-After the system comes back up, run:  
-`cd Scripts`  
+`cd ~/Scripts`  
 `./check.sh`  
 If you are too quick, you will see things like `start_btmon.sh`, `start_bluetoothctl.sh`, or `start_gpspipe.sh`.  
 But after their sleep timers have expired, they will transition to things like:
 
 ```
-root      1506  0.3  0.5   5216  2268 pts/0    S    01:12   0:00 /usr/bin/gpspipe -p -w -T +%F %H:%M:%S -o /home/pi/Scripts/logs/gpspipe/2023-08-24-01-11-38_pi0-2.txt
-root      1871  0.0  0.4   7328  1940 pts/0    S+   01:12   0:00 grep gpspipe
-root      1504  0.6  0.4   2780  1960 pts/0    S    01:12   0:00 /usr/bin/btmon -T -w /home/pi/Scripts/logs/btmon/2023-08-24-01-11-38_pi0-2.bin
-root      1873  0.0  0.4   7328  2020 pts/0    S+   01:12   0:00 grep btmon
-root      1510  0.3  0.7   6740  3204 pts/0    S    01:12   0:00 /usr/bin/bluetoothctl scan on
-root      1875  0.0  0.4   7328  2016 pts/0    S+   01:12   0:00 grep bluetoothctl
+root       769  0.1  0.5   5216  2212 ?        S    15:05   0:00 /usr/bin/gpspipe -p -w -T +%F %H:%M:%S -o /home/pi/Scripts/logs/gpspipe/2024-04-22-15-04-36_pi0-1.txt
+pi        1160  0.0  0.4   7328  2008 pts/1    S+   15:05   0:00 grep gpspipe
+root       825  0.5  0.4   2780  2024 ?        S    15:05   0:00 /usr/bin/btmon -T -w /home/pi/Scripts/logs/btmon/2024-04-22-15-04-36_pi0-1.bin
+pi        1172  0.0  0.4   7328  2024 pts/1    S+   15:05   0:00 grep btmon
+root       895  2.1  1.0  18220  4472 ?        Sl   15:05   0:00 tclsh8.6 /usr/bin/unbuffer /home/pi/Downloads/bluez-5.66/client/bluetoothctl scan on
+root       897  1.4  0.7   6988  3376 pts/0    Ss+  15:05   0:00 /home/pi/Downloads/bluez-5.66/client/bluetoothctl scan on
+pi        1184  0.0  0.4   7328  1960 pts/1    S+   15:05   0:00 grep bluetoothctl
+root       339  0.0  0.5   7648  2516 ?        S    15:04   0:00 /bin/bash /home/pi/Scripts/start_central_app_launcher.sh
+root      1127  3.0  0.7   9932  3324 ?        S    15:05   0:00 sudo -E python3 -u /home/pi/central_app_launcher2.py
+root      1136 52.0  2.4  19036 11008 ?        R    15:05   0:01 python3 -u /home/pi/central_app_launcher2.py
+pi        1193  0.0  0.4   7328  2024 pts/1    S+   15:05   0:00 grep central_app
 ```
-If your GPS is plugged in and working correctly, you should see all 3 of those sort of commands. From now on, whenever you reboot, the data collection will begin automatically.
 
-You can cancel collection by running: `sudo ./killall.sh` from the Scripts folder.
+You can cancel collection by running: `sudo ./killall.sh` from the `~/Scripts` folder.
 
 If you want to manually restart the collection without a reboot, you can run: `sudo ./runall.sh` from the Scripts folder.
 
 # Analysis Scripts Usage
 
-After you have sniffed some traffic, you will have files in /home/pi/Scripts/logs/btmon/ and /home/pi/Scripts/logs/gpspipe/, that should be named the same as each other (timestamp followed by hostname) except that GPS files end in .txt and btmon in .bin.
+After you have sniffed some traffic, you will have files in /home/pi/Scripts/logs/btmon/ (and if you're using GPS /home/pi/Scripts/logs/gpspipe/), that should be named the same as each other (timestamp followed by hostname) except that GPS files end in .txt and btmon in .bin.
 
 **Note:** Because data parsing and database lookups can be CPU/IO intensive, it is generally recommended to *not* perform data import or analysis on the capture device (the Pi Zero in this case.) Rather, it is recommended to copy all data off to a separate, faster, analysis system, and perform the subsequent steps there.
 

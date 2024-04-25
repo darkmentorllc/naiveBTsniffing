@@ -183,3 +183,49 @@ If your GPS is plugged in and working correctly, you should see all 3 of those s
 You can cancel collection by running: `sudo ./killall.sh` from the `~/Scripts` folder.
 
 If you want to manually restart the collection without a reboot, you can run: `sudo ./runall.sh` from the Scripts folder.
+
+# On-Device Analysis Scripts Usage
+
+After you have sniffed some traffic, you will have files in /home/pi/Scripts/logs/btmon/ (and if you're using GPS /home/pi/Scripts/logs/gpspipe/), that should be named the same as each other (timestamp followed by hostname) except that GPS files end in .txt and btmon in .bin.
+
+**Note:** Because data parsing and database lookups can be CPU/IO intensive, it is generally recommended to *not* perform data import or analysis on the capture device (the Pi Zero in this case.) Rather, it is recommended to copy all data off to a separate, faster, analysis system, and perform the subsequent steps there.
+
+### delete\_gps\_files\_lacking\_lat\_long.py
+
+Often the GPS log will be continuing to log metadata even when it can't get a GPS coordinate fix. You should periodically deliminate any useless files that have no lat/long coordinates by running the following:
+
+```
+python3 delete_gps_files_lacking_lat_long.py /home/pi/Scripts/logs/gpspipe/
+```
+
+Any files that are deleted will be printed out. No output means no files were deleted.
+
+### map\_specific.sh
+
+Assume we have the following files:
+
+```
+pi@pi0-2:~/Scripts $ ls logs/gpspipe/
+2023-08-24-01-04-59_pi0-2.txt  2023-08-24-01-11-38_pi0-2.txt
+```
+
+If you have a file like `/home/pi/Scripts/logs/gpspipe/2023-08-24-01-11-38_pi0-2.txt` for instance, you can map the instances of *named* bluetooth devices. 
+
+```
+root@pi0-2:/home/pi/Scripts# ./map_specific.sh 2023-08-24-01-04-59_pi0-2 2023-08-24-01-11-38_pi0-2
+passed in 
+Processing  2023-08-24-01-04-59_pi0-2
+Running as user "root" and group "root". This could be dangerous.
+Processing  2023-08-24-01-11-38_pi0-2
+Running as user "root" and group "root". This could be dangerous.
+Adding markers
+
+Done
+
+root@pi0-2:/home/pi/Scripts# ls -la bt_map.html 
+-rw-r--r-- 1 root root 9012 Aug 24 01:31 bt_map.html
+```
+
+The file bt_map.html can be opened in a browser to see the GPS locations of named devices.
+
+*Note:* The accepted name format is just the filename, not the full path. You must remove the filetype suffix like ".txt" or ".bin".

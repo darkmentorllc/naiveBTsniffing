@@ -146,11 +146,10 @@ Which scripts launch which other scripts, and what logs what data to where is ca
 ### Setup automatic script execution at boot:
 
 ```
-cp -r ~/naiveBTsniffing/Scripts ~/Scripts
+cp -r ~/naiveBTsniffing/Scripts ~
+cd ~/Scripts
 cp ~/Scripts/central_app_launcher2.py ~/central_app_launcher2.py
-cd ~
 sudo su
-cd Scripts
 chmod +x *.sh
 crontab -e
 ```

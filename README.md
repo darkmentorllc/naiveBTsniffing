@@ -1,6 +1,8 @@
-Welcome to Xeno's naive Bluetooth sniffing setup! It's cheap and easy and *good enough* to get started!
+#**Note: You probably *don't* want to use this repository, but instead want to use the more advanced successor (which is built on the same principles): [Blue2thprinting](https://github.com/darkmentorllc/Blue2thprinting).**
 
-**Note: You probably *don't* want to use this repository, but instead want to use the more advanced successor (which is built on the same principles): [Blue2thprinting](https://github.com/darkmentorllc/Blue2thprinting).**
+# Disclaimer!
+
+The code in this repository is ***researchware***. That means **its purpose is primarily to prove that the results from past research are real, and to allow replication of results*** (in this case, the ["It Was Harder to Sniff Bluetooth Through My Mask During the Pandemic..."](https://darkmentor.com/publication/2023-08-hitb/) talk.) This code is not meant to be used as a production tool, nor is it optimized for performance, ease of use, or anything else. It is only meant to be used by researchers looking to replicate, or expand, on this work.
 
 Note: the below hardware purchase links are Amazon affiliate links that support the [OpenSecurityTraining2](https://ost2.fyi) nonprofit.
 

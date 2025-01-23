@@ -74,7 +74,7 @@ The below instructions are the full setup guide. However, it's the kind of thing
 2. Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to write the `rPi0_Buster_KnownGood_2024-04-22.img.gz` file to your microSD card.
 3. After you boot your Raspberry Pi Zero do the following from the command line:
 4. cd ~/Scripts
-5. sudo killall.sh
+5. sudo ./killall.sh
 6. sudo raspi-config
 	1. Select "1 System Options"
 	2. Select "S4 Hostname"
